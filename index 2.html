@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Suzanne Vidal — Travaux</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;1,300;1,400&family=Source+Sans+3:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * { text-underline-offset: 1px; }
+
+    body {
+      background: #fff;
+      color: #111;
+      font-family: 'Source Serif 4', serif;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ══ HEADER ══ */
+    header {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 100;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      padding: 22px 40px 0 40px;
+      background: transparent;
+      pointer-events: none;
+    }
+    header * { pointer-events: auto; }
+
+    .site-name {
+      font-size: 35px;
+      font-weight: 400;
+      text-decoration: none;
+      color: #111;
+    }
+
+    .header-btns { display: flex; align-items: baseline; gap: 28px; }
+
+    .hbtn {
+      font-family: 'Source Serif 4', serif;
+      font-size: 18px;
+      font-weight: 200;
+      color: #888888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 1px;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    .hbtn:hover  { color: #111; }
+    .hbtn.active { color: #111; font-style: italic; }
+
+    /* Boutons infos et dessiner — même style */
+    #btn-draw, #btn-infos {
+      font-family: 'Source Serif 4', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: #888888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 1px;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    #btn-draw:hover,  #btn-infos:hover  { color: #111; }
+    #btn-draw.active, #btn-infos.active { color: #111; font-style: italic; }
+
+    /* Wrapper droite du header — dessiner collé à en */
+    .header-right {
+      display: flex;
+      align-items: baseline;
+      gap: 28px;
+    }
+    .header-right .header-btns {
+      margin-left: 85px;
+    }
+
+    /* Croix — cachée par défaut, visible en mode dessin */
+    #btn-close {
+      display: none;
+      font-family: 'Source Serif 4', serif;
+      font-size: 22px;
+      font-weight: 300;
+      color: #111;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      transition: opacity 0.2s;
+    }
+    #btn-close:hover { opacity: 0.4; }
+    body.drawing-active #btn-close,
+    body.infos-active   #btn-close { display: block; }
+    body.drawing-active #lang-btn,
+    body.infos-active   #lang-btn  { display: none; }
+
+    /* ══ LAYOUT ══ */
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      height: 100vh;
+    }
+
+    /* Noir et blanc sur les images uniquement — le canvas reste en couleur */
+    .img img, .img video {
+      transition: filter 0.5s ease;
+    }
+    .layout.grayscale .img img,
+    .layout.grayscale .img video {
+      filter: grayscale(1);
+    }
+
+    /* ══ COLONNE CENTRE ══ */
+    .col-center {
+      position: relative;
+      overflow-y: scroll;
+      scrollbar-width: none;
+      padding: 100px 40px 80px 80px;
+    }
+    .col-center::-webkit-scrollbar { display: none; }
+
+    /* Canvas */
+    #draw-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .col-center.drawing { cursor: none; }
+    .col-center.drawing #draw-canvas { pointer-events: auto; }
+
+    /* Curseur SVG */
+    #draw-cursor {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      display: none;
+      transform: translate(-50%, -50%);
+    }
+    body.drawing-active #draw-cursor { display: block; }
+
+    /* ══ BLOCS PROJET ══ */
+    .project-block { margin-bottom: 260px; }
+    .project-block:last-child { margin-bottom: 0; }
+    .project-label { display: none; }
+
+    .img { margin-bottom: 40px; }
+    .img.gap-sm { margin-bottom: 16px; }
+    .img.gap-lg { margin-bottom: 100px; }
+    .img.gap-xl { margin-bottom: 160px; }
+
+    .img.left   { margin-left: 0;    margin-right: auto; }
+    .img.center { margin-left: auto; margin-right: auto; }
+    .img.right  { margin-left: auto; margin-right: 0;   }
+
+    .img img, .img video {
+      width: 100%;
+      display: block;
+      object-fit: cover;
+      background: #e8e4e0;
+    }
+
+    .img.w25  { width: 25%; } .img.w30  { width: 30%; }
+    .img.w35  { width: 35%; } .img.w40  { width: 40%; }
+    .img.w45  { width: 45%; } .img.w50  { width: 50%; }
+    .img.w55  { width: 55%; } .img.w60  { width: 60%; }
+    .img.w65  { width: 65%; } .img.w70  { width: 70%; }
+    .img.w80  { width: 80%; } .img.w100 { width: 100%;}
+
+    .img.r-sq  img, .img.r-sq  video { aspect-ratio: 1/1;  }
+    .img.r-43  img, .img.r-43  video { aspect-ratio: 4/3;  }
+    .img.r-32  img, .img.r-32  video { aspect-ratio: 3/2;  }
+    .img.r-169 img, .img.r-169 video { aspect-ratio: 16/9; }
+    .img.r-23  img, .img.r-23  video { aspect-ratio: 2/3;  }
+    .img.r-50  img, .img.r-50  video { aspect-ratio: 1/2;  }
+
+    /* ══ COLONNE DROITE ══ */
+    .col-right {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Flèches */
+    .arrow {
+      position: absolute;
+      left: 0;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      color: #888888;
+      font-size: 36px;
+      line-height: 1;
+      transition: color 0.2s, opacity 0.4s;
+      font-family: 'Source Serif 4', serif;
+    }
+    .arrow:hover { color: #111; }
+    .arrow.up   { top: 100px; }
+    .arrow.down { bottom: 28px; }
+    .arrow.hidden { opacity: 0; pointer-events: none; }
+
+    /* ── Descriptions ── */
+    .project-desc {
+      position: absolute;
+      width: 240px;
+      top: 55%;
+      transform: translateY(calc(-50% + 12px));
+      left: 0;
+      margin: 0;
+      opacity: 0;
+      filter: blur(8px);
+      pointer-events: none;
+      transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
+    }
+    .project-desc.is-visible {
+      opacity: 1;
+      filter: blur(0px);
+      transform: translateY(-50%);
+      pointer-events: auto;
+    }
+
+    .project-desc h3 { font-size: 25px; font-weight: 400; margin-bottom: 0; }
+    .project-desc p {
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 15px;
+      line-height: 1.3;
+      color: #1f1f1f;
+    }
+    .project-desc u { text-decoration: underline; }
+    .project-desc .meta {
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 15px;
+      color: #888888;
+      margin-bottom: 18px;
+      line-height: 1.3;
+    }
+    /* Descriptions cachées en mode dessin — avec blur */
+    .project-desc.draw-hidden {
+      opacity: 0 !important;
+      filter: blur(8px) !important;
+      pointer-events: none !important;
+      transform: translateY(calc(-50% + 12px)) !important;
+    }
+
+    /* ── Panneau infos ── */
+    #infos-panel {
+      position: absolute;
+      left: 0;
+      width: 240px;
+      top: 55%;
+      transform: translateY(calc(-50% + 12px));
+      opacity: 0;
+      filter: blur(8px);
+      pointer-events: none;
+      transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
+    }
+    #infos-panel.visible {
+      opacity: 1;
+      filter: blur(0px);
+      transform: translateY(-50%);
+      pointer-events: auto;
+    }
+    #infos-panel p {
+      font-family: 'Source Sans 3', sans-serif;
+      font-size: 15px;
+      line-height: 1.3;
+      color: #1f1f1f;
+    }
+    #infos-panel p u { text-decoration: underline; }
+    #infos-panel .infos-contact {
+      margin-top: 22px;
+    }
+
+    /* ── Panneau outils dessin ── */
+    #draw-panel {
+      position: absolute;
+      left: 0;
+      width: 240px;
+      top: 55%;
+      transform: translateY(calc(-50% + 12px));
+      opacity: 0;
+      filter: blur(8px);
+      pointer-events: none;
+      transition: opacity 0.5s ease, filter 0.5s ease, transform 0.5s ease;
+    }
+    #draw-panel.visible {
+      opacity: 1;
+      filter: blur(0px);
+      transform: translateY(-50%);
+      pointer-events: auto;
+    }
+
+    /* Outils empilés */
+    .tool-btn {
+      font-family: 'Source Serif 4', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: #888888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 1px;
+      padding: 0;
+      display: block;
+      margin-bottom: 10px;
+      transition: color 0.2s;
+    }
+    .tool-btn:hover  { color: #111;}
+    .tool-btn.active { color: #111; font-style: italic;}
+
+    /* Curseur partagé — toujours visible dans le panel */
+    #shared-slider-wrap {
+      margin-top: 20px;
+    }
+
+    /* Curseur couleur */
+    #color-slider-wrap {
+      margin-top: 16px;
+    }
+    #color-slider {
+      background: linear-gradient(to right,
+        hsl(0,100%,45%), hsl(30,100%,45%), hsl(60,100%,45%),
+        hsl(90,100%,45%), hsl(120,100%,45%), hsl(150,100%,45%),
+        hsl(180,100%,45%), hsl(210,100%,45%), hsl(240,100%,45%),
+        hsl(270,100%,45%), hsl(300,100%,45%), hsl(330,100%,45%),
+        hsl(360,100%,45%)) !important;
+    }
+    #color-slider { --thumb-color: hsl(0,100%,45%); }
+    #color-slider::-webkit-slider-thumb { background: var(--thumb-color) !important; }
+    #color-slider::-moz-range-thumb     { background: var(--thumb-color) !important; }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 1px;
+      background: #888888;
+      outline: none;
+      cursor: pointer;
+      margin: 0;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #000000;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.4); }
+    input[type="range"]::-moz-range-thumb {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: #000000;
+      border: none;
+      cursor: pointer;
+    }
+
+    #btn-clear {
+      display: block;
+      margin-top: 28px;
+      font-family: 'Source Serif 4', serif;
+      font-size: 18px;
+      color: #888888;
+      background: none;
+      border: none;
+      cursor: pointer;
+      text-decoration: underline;
+      text-underline-offset: 1px;
+      padding: 0;
+      transition: color 0.2s;
+    }
+    #btn-clear:hover { color: #e00;}
+  </style>
+</head>
+<body>
+
+  <svg id="draw-cursor" width="40" height="40" viewBox="0 0 40 40">
+    <circle id="cursor-circle" cx="20" cy="20" r="8"
+      fill="none" stroke="#111" stroke-width="1"/>
+  </svg>
+
+  <header>
+    <a href="index.html" class="site-name">Emilio Avignon</a>
+    <div class="header-right">
+      <button id="btn-infos">infos</button>
+      <button id="btn-draw">dessiner</button>
+      <div class="header-btns">
+        <button class="hbtn" id="lang-btn">en</button>
+        <button id="btn-close">✕</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="layout" id="main-layout">
+
+    <main class="col-center" id="scroll-col">
+
+      <section class="project-block" id="bontemps">
+        <div class="project-label"><h2>Bontemps</h2></div>
+        <div class="img w100 r-32 gap-lg">
+          <video autoplay muted loop playsinline>
+            <source src="images/Bontemps-11.mp4" type="video/mp4">
+          </video>
+        </div>
+        <div class="img w40 center gap-lg">
+          <img src="images/Bontemps-2.jpg" alt="Bontemps — soudure prototype">
+        </div>
+        <div class="img w65 left">
+          <img src="images/Bontemps-3.jpg" alt="Bontemps — salle de bain">
+        </div>
+        <div class="img w40 right gap-lg">
+          <img src="images/Bontemps-4.jpg" alt="Bontemps — chambre">
+        </div>
+        <div class="img w65 center gap-lg">
+          <img src="images/Bontemps-5.jpg" alt="Bontemps — à l'usine">
+        </div>
+        <div class="img w40 left">
+          <img src="images/Bontemps-6.jpg" alt="Bontemps — miroir">
+        </div>
+        <div class="img w40 center">
+          <img src="images/Bontemps-7.jpg" alt="Bontemps — porte manteau">
+        </div>
+        <div class="img w40 right gap-lg">
+          <img src="images/Bontemps-8.jpg" alt="Bontemps — vide poche">
+        </div>
+        <div class="img w100 r-169">
+          <video autoplay muted loop playsinline>
+            <source src="images/Bontemps-10.mp4" type="video/mp4">
+          </video>
+        </div>
+      </section>
+
+      <section class="project-block" id="affluences">
+        <div class="project-label"><h2>Affluences</h2></div>
+        <div class="img w40 left">
+          <img src="images/Affluences-4.jpg" alt="Affluences — dessin motif">
+        </div>
+        <div class="img w55 right gap-lg">
+          <img src="images/Affluences-3.jpg" alt="Affluences — textile">
+        </div>
+        <div class="img w65 center">
+          <img src="images/Affluences-1.jpg" alt="Affluences — dessin motif 2">
+        </div>
+        <div class="img w40 left gap-lg">
+          <img src="images/Affluences-2.jpg" alt="Affluences — textile 2">
+        </div>
+        <div class="img w70 right r-sq">
+          <video autoplay muted loop playsinline>
+            <source src="images/Affluences-7.mp4" type="video/mp4">
+          </video>
+        </div>
+      </section>
+
+      <section class="project-block" id="personne">
+        <div class="project-label"><h2>Personne</h2></div>
+        <div class="img w40 left">
+          <img src="images/Personne-1.jpg" alt="dessin céramique">
+        </div>
+        <div class="img w80 right gap-lg">
+          <img src="images/Personne-2.jpg" alt="marionnette">
+        </div>
+        <div class="img w45 left">
+          <img src="images/Personne-3.jpg" alt="moule bougie">
+        </div>
+        <div class="img w60 center">
+          <img src="images/Personne-4.jpg" alt="moule bougie">
+        </div>
+      </section>
+
+      <section class="project-block" id="ramo">
+        <div class="project-label"><h2>Ramo</h2></div>
+        <div class="img w60 left gap-lg">
+          <img src="images/Ramo-1.jpg" alt="Ramo — graphisme">
+        </div>
+        <div class="img w40 right">
+          <img src="images/Ramo-3.jpg" alt="Ramo — à table">
+        </div>
+        <div class="img w100 r-32 center">
+          <img src="images/Ramo-2.jpg" alt="Ramo — champs de liège">
+        </div>
+        <div class="img w50 center">
+          <img src="images/Ramo-6.jpg" alt="Ramo — assemblage">
+        </div>
+      </section>
+
+      <section class="project-block" id="claustra">
+        <div class="project-label"><h2>Claustra</h2></div>
+        <div class="img w45 left">
+          <img src="images/Claustra-3.jpg" alt="Claustra 3">
+        </div>
+        <div class="img w70 right">
+          <img src="images/Claustra-2.jpg" alt="Claustra 2">
+        </div>
+        <div class="img w50 left gap-lg">
+          <img src="images/Claustra-4.jpg" alt="Claustra 4">
+        </div>
+        <div class="img w40 center">
+          <img src="images/Claustra-1.jpg" alt="Poster">
+        </div>
+      </section>
+
+    </main>
+
+    <aside class="col-right">
+      <button class="arrow down" id="arrow-down">↓</button>
+
+      <!-- Descriptions -->
+      <div class="project-desc intro is-visible" id="desc-intro"><p></p></div>
+      <div class="project-desc" data-for="bontemps"><h3></h3><div class="meta"></div><p></p></div>
+      <div class="project-desc" data-for="affluences"><h3></h3><p></p></div>
+      <div class="project-desc" data-for="personne"><h3></h3><p></p></div>
+      <div class="project-desc" data-for="ramo"><h3></h3><div class="meta"></div><p></p></div>
+      <div class="project-desc" data-for="claustra"><h3></h3><div class="meta"></div><p></p></div>
+
+      <!-- Panneau infos -->
+      <div id="infos-panel">
+        <p id="infos-bio"></p>
+        <div class="infos-contact">
+          <p>+33 6 52 54 91 24<br>emilioavignon@gmail.com<br>@emilioavignon</p>
+        </div>
+      </div>
+
+      <!-- Panneau outils dessin -->
+      <div id="draw-panel">
+        <button class="tool-btn active" id="tool-pen">pinceau</button>
+        <button class="tool-btn"        id="tool-eraser">gomme</button>
+
+        <!-- Curseur partagé -->
+        <div id="shared-slider-wrap">
+          <input type="range" id="size-slider" min="1" max="60" value="2">
+        </div>
+
+        <!-- Curseur couleur -->
+        <div id="color-slider-wrap">
+          <input type="range" id="color-slider" min="0" max="360" value="0">
+        </div>
+
+        <button id="btn-clear">tout effacer</button>
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    /* ══ TRADUCTIONS ══ */
+    const translations = {
+      intro: {
+        fr: `Étudiant en design objet à l'<u>École nationale supérieure des arts décoratifs de Paris (EnsAD)</u>, je suis passionné de <u>dessin</u>. Au-delà d'un simple outil de représentation, mes recherches graphiques participent à une méthodologie qui fait naître les volumes, précise les formes et révèle les potentialités de la matière. Ces productions sont motivées par une recherche de <u>poésie</u>, voire de <u>narration</u>, à travers les compositions, les formes et les couleurs des objets que j'imagine. Le design devient ainsi le lieu où se rencontrent l'<u>intuition et la rigueur</u>, où chaque ligne contribue à <u>donner vie à la matière.</u>`,
+        en: `A product design student at the <u>École nationale supérieure des arts décoratifs in Paris (EnsAD)</u>, I am passionate about <u>drawing</u>. Beyond a simple tool of representation, my graphic research contributes to a methodology that gives birth to volumes, refines forms and reveals the potential of materials. This work is driven by a search for <u>poetry</u>, even <u>narrative</u>, through the compositions, forms and colours of the objects I imagine. Design thus becomes the place where <u>intuition and rigour</u> meet, where every line contributes to <u>bringing matter to life.</u>`
+      },
+      bontemps: {
+        title: 'Bontemps',
+        meta: { fr: 'Collaboration avec Marius Gauge<br>Partenariat avec Escalier Décor', en: 'Collaboration with Marius Gauge<br>Partnership with Escalier Décor' },
+        fr: `Ce projet, réalisé pour la société Escalier Décor, est une tentative de trouver de <u>nouvelles utilisations aux rampes d'escalier</u>. Notre objectif est de transformer l'escalier d'un simple passage à un endroit où <u>suspendre un vêtement, ranger ses clés ou étendre une serviette</u>. Dans un deuxième temps, nous concevons un <u>valet de nuit</u> qui reprend le système structurel de la rampe. Bontemps était le nom du premier valet de Louis XIV.`,
+        en: `This project, created for Escalier Décor, is an attempt to find <u>new uses for stair railings</u>. Our goal is to transform the staircase from a simple passageway into a place to <u>hang a coat, store keys or drape a towel</u>. In a second phase, we designed a <u>valet stand</u> that draws on the structural system of the railing. Bontemps was the name of Louis XIV's first valet.`
+      },
+      affluences: {
+        title: 'Affluences', meta: { fr: '', en: '' },
+        fr: `Quand <u>les corps grouillent</u>, le mouvement de chacun participe au mouvement de tous. Ainsi, la foule est un objet malléable, qui <u>se forme et se déforme</u>, qui se ceint et s'échappe. C'est cette dynamique qui caractérise mon <u>motif</u>. Un changement de perspective ou le mouvement d'une lumière fait vibrer le bas-relief, donnant aux formes un <u>semblant de vie.</u><br>La foule garde parfois les secrets les plus intimes.`,
+        en: `When <u>bodies swarm</u>, each person's movement contributes to the movement of all. The crowd becomes a malleable object, one that <u>forms and deforms</u>, tightens and escapes. This dynamic is what defines my <u>pattern</u>. A shift in perspective or the movement of light makes the bas-relief vibrate, giving the forms a <u>semblance of life.</u><br>A crowd sometimes keeps the most intimate secrets.`
+      },
+      personne: {
+        title: 'Personne', meta: { fr: '', en: '' },
+        fr: `Dans le cadre d'une recherche sur les objets qui <u>simulent la vie</u>, la marionnette se tient en équilibre <u>entre la chose et le sujet</u>. Elle devient un <u>double</u> de celui ou celle qui la tient mais exprime par des gestes maladroits <u>sa propre mélancolie.</u>`,
+        en: `As part of a research project on objects that <u>simulate life</u>, the puppet balances <u>between thing and subject</u>. It becomes a <u>double</u> of the person who holds it, yet expresses through clumsy gestures <u>its own melancholy.</u>`
+      },
+      ramo: {
+        title: 'Ramo',
+        meta: { fr: 'Collaboration avec Georges Laaraman', en: 'Collaboration with Georges Laaraman' },
+        fr: `<u>Le liège</u> que l'on utilise au quotidien comporte un paradoxe : c'est une matière naturelle par sa provenance, mais transformée dans son usage. Pour cette raison, on peine souvent à en apprécier la sensualité. C'est pour ramener <u>la poésie du chêne brut</u>, avec son bois, son écorce, ses couleurs, que nous avons produit ce design évocateur.`,
+        en: `<u>Cork</u> as we use it in everyday life carries a paradox: natural by origin, transformed in use. To restore <u>the poetry of raw cork oak</u> — its wood, bark and colours — we created this evocative design.`
+      },
+      claustra: {
+        title: 'Claustra',
+        meta: { fr: 'Collaboration avec Marius Gauge<br>Partenariat avec Varian', en: 'Collaboration with Marius Gauge<br>Partnership with Varian' },
+        fr: `Translucide et rythmée, cette <u>cloison</u> se déploie et se superpose, créant un effet de <u>moirage</u>. Les dizaines de modules du rideau se <u>déforment</u> pour accentuer l'illusion. <u>L'objet prend forme à travers ce qu'il révèle du paysage.</u>`,
+        en: `Translucent and rhythmic, this <u>partition</u> unfolds and overlaps, creating a <u>moiré effect</u>. The dozens of modules <u>deform</u> to heighten the illusion. <u>The object takes shape through what it reveals of the landscape.</u>`
+      }
+    };
+
+    let lang = 'fr';
+    function renderDesc(key) {
+      const t = translations[key];
+      const desc = document.querySelector(key === 'intro' ? '#desc-intro' : `.project-desc[data-for="${key}"]`);
+      if (!desc) return;
+      if (key === 'intro') { desc.querySelector('p').innerHTML = t[lang]; return; }
+      desc.querySelector('h3').textContent = t.title;
+      const meta = desc.querySelector('.meta');
+      if (meta) meta.innerHTML = t.meta[lang];
+      desc.querySelector('p').innerHTML = t[lang];
+    }
+    function applyLang() {
+      Object.keys(translations).forEach(renderDesc);
+      document.getElementById('lang-btn').textContent = lang === 'fr' ? 'en' : 'fr';
+      document.documentElement.lang = lang;
+      /* Met à jour le bio dans le panneau infos si déjà ouvert */
+      const bioEl = document.getElementById('infos-bio');
+      if (bioEl) bioEl.innerHTML = translations.intro[lang];
+    }
+    applyLang();
+    document.getElementById('lang-btn').addEventListener('click', () => {
+      lang = lang === 'fr' ? 'en' : 'fr';
+      applyLang();
+    });
+
+    /* ══ SCROLL ══ */
+    const scrollCol  = document.getElementById('scroll-col');
+    const blocks     = Array.from(document.querySelectorAll('.project-block'));
+    const descs      = document.querySelectorAll('.project-desc');
+    const intro      = document.getElementById('desc-intro');
+    const arrowDown  = document.getElementById('arrow-down');
+    let activeIndex  = -1, introGone = false;
+
+    function showDesc(id) {
+      descs.forEach(d => d.classList.remove('is-visible'));
+      const t = document.querySelector(`.project-desc[data-for="${id}"]`);
+      if (t) t.classList.add('is-visible');
+    }
+    function getActiveIndex() {
+      const triggerY = scrollCol.getBoundingClientRect().top + scrollCol.clientHeight * 0.35;
+      let best = -1;
+      for (let i = 0; i < blocks.length; i++) {
+        if (blocks[i].getBoundingClientRect().top <= triggerY) best = i;
+      }
+      return best;
+    }
+    scrollCol.addEventListener('scroll', () => {
+      const idx = getActiveIndex();
+      if (idx === activeIndex) return;
+      activeIndex = idx;
+      updateArrowUp();
+      if (idx === -1) {
+        descs.forEach(d => d.classList.remove('is-visible'));
+        intro.classList.add('is-visible');
+        introGone = false;
+        return;
+      }
+      if (!introGone) { intro.classList.remove('is-visible'); introGone = true; }
+      showDesc(blocks[idx].id);
+    }, { passive: true });
+
+    const HEADER_OFFSET = 80;
+    function scrollToBlock(idx) {
+      if (idx < 0 || idx >= blocks.length) return;
+      scrollCol.scrollTo({ top: blocks[idx].offsetTop - HEADER_OFFSET, behavior: 'smooth' });
+    }
+
+    /* Met à jour la visibilité de la flèche haut — supprimée */
+    function updateArrowUp() {}
+
+    /* Bloque le scroll vers le haut une fois sur Bontemps */
+    scrollCol.addEventListener('scroll', () => {
+      if (activeIndex === 0) {
+        const minTop = blocks[0].offsetTop - HEADER_OFFSET;
+        if (scrollCol.scrollTop < minTop) scrollCol.scrollTop = minTop;
+      }
+    }, { passive: false });
+
+    /* Init : flèche haut cachée au chargement (on est sur l'intro) */
+    updateArrowUp();
+
+    arrowDown.addEventListener('click', () => {
+      if (activeIndex === -1) {
+        /* Sur l'intro : change uniquement la légende, sans scroller */
+        intro.classList.remove('is-visible');
+        introGone = true;
+        activeIndex = 0;
+        updateArrowUp();
+        showDesc(blocks[0].id);
+      } else {
+        const next = activeIndex < blocks.length - 1 ? activeIndex + 1 : 0;
+        scrollToBlock(next);
+      }
+    });
+
+
+
+    /* ══ INFOS ══ */
+    const btnInfos   = document.getElementById('btn-infos');
+    const infosPanel = document.getElementById('infos-panel');
+    const infosBio   = document.getElementById('infos-bio');
+    let infosMode = false;
+
+    function updateInfosBio() {
+      infosBio.innerHTML = translations.intro[lang];
+    }
+
+    function enterInfos() {
+      if (drawMode) exitDraw();
+      infosMode = true;
+      document.body.classList.add('infos-active');
+      btnInfos.classList.add('active');
+      descs.forEach(d => d.classList.add('draw-hidden'));
+      infosPanel.classList.add('visible');
+      updateInfosBio();
+    }
+
+    function exitInfos() {
+      infosMode = false;
+      document.body.classList.remove('infos-active');
+      btnInfos.classList.remove('active');
+      descs.forEach(d => d.classList.remove('draw-hidden'));
+      infosPanel.classList.remove('visible');
+    }
+
+    btnInfos.addEventListener('click', () => {
+      if (infosMode) exitInfos(); else enterInfos();
+    });
+
+    /* ══ DESSIN ══ */
+    const btnDraw    = document.getElementById('btn-draw');
+    const btnClose   = document.getElementById('btn-close');
+    const drawPanel  = document.getElementById('draw-panel');
+    const btnClear   = document.getElementById('btn-clear');
+    const toolPen    = document.getElementById('tool-pen');
+    const toolEraser = document.getElementById('tool-eraser');
+    const sizeSlider = document.getElementById('size-slider');
+    const cursorSvg  = document.getElementById('draw-cursor');
+    const cursorCirc = document.getElementById('cursor-circle');
+    const layout     = document.getElementById('main-layout');
+
+    const canvas = document.createElement('canvas');
+    canvas.id = 'draw-canvas';
+    scrollCol.insertBefore(canvas, scrollCol.firstChild);
+    const ctx = canvas.getContext('2d');
+
+    let drawMode  = false;
+    let isErasing = false;
+    let isDrawing = false;
+    let lastX = 0, lastY = 0;
+    let brushSize = 2;
+    let drawColor = 'hsl(0,100%,45%)';
+
+    /* ── Stockage vectoriel des traits ──────────────────────────
+     * Chaque trait mémorise ses points en coordonnées normalisées
+     * (0→1) par rapport aux dimensions du canvas au moment du tracé.
+     * À chaque redimensionnement on redevine les pixels absolus.
+     * Cela rend les dessins parfaitement solidaires des images.
+     */
+    const strokes = [];
+    let currentStroke = null;
+
+    function currentSize() { return brushSize; }
+
+    /* Normalise un point pixel → fraction */
+    function norm(p) {
+      return { x: p.x / canvas.width, y: p.y / canvas.height };
+    }
+    /* Dénormalise fraction → pixel pour le canvas courant */
+    function denorm(np) {
+      return { x: np.x * canvas.width, y: np.y * canvas.height };
+    }
+
+    /* Redessine tous les traits stockés */
+    function redrawAll() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const s of strokes) {
+        if (s.points.length < 2) continue;
+        ctx.beginPath();
+        const p0 = denorm(s.points[0]);
+        ctx.moveTo(p0.x, p0.y);
+        for (let i = 1; i < s.points.length; i++) {
+          const p = denorm(s.points[i]);
+          ctx.lineTo(p.x, p.y);
+        }
+        ctx.globalCompositeOperation = s.erasing ? 'destination-out' : 'source-over';
+        ctx.strokeStyle  = s.erasing ? 'rgba(0,0,0,1)' : s.color;
+        ctx.lineWidth    = s.size * canvas.width;   /* taille proportionnelle */
+        ctx.lineCap      = 'round';
+        ctx.lineJoin     = 'round';
+        ctx.stroke();
+      }
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    /* Redimensionne le canvas et redessine (pas de putImageData) */
+    function resizeCanvas() {
+      const nw = scrollCol.scrollWidth, nh = scrollCol.scrollHeight;
+      if (nw === canvas.width && nh === canvas.height) return;
+      canvas.width  = nw;
+      canvas.height = nh;
+      redrawAll();
+    }
+
+    function updateCursor() {
+      const size = currentSize();
+      const r   = size / 2;
+      const box = Math.max(size + 4, 12);
+      cursorSvg.setAttribute('width',   box);
+      cursorSvg.setAttribute('height',  box);
+      cursorSvg.setAttribute('viewBox', `0 0 ${box} ${box}`);
+      cursorCirc.setAttribute('cx', box / 2);
+      cursorCirc.setAttribute('cy', box / 2);
+      cursorCirc.setAttribute('r',  r);
+      cursorCirc.setAttribute('stroke', isErasing ? '#888888' : drawColor);
+      cursorCirc.setAttribute('stroke-dasharray', isErasing ? '2 2' : 'none');
+    }
+
+    function syncSlider() { sizeSlider.value = brushSize; }
+
+    document.addEventListener('mousemove', e => {
+      if (!drawMode) return;
+      cursorSvg.style.left = e.clientX + 'px';
+      cursorSvg.style.top  = e.clientY + 'px';
+    });
+
+    function getPos(e) {
+      const rect = scrollCol.getBoundingClientRect();
+      const cx = e.touches ? e.touches[0].clientX : e.clientX;
+      const cy = e.touches ? e.touches[0].clientY : e.clientY;
+      return { x: cx - rect.left, y: cy - rect.top + scrollCol.scrollTop };
+    }
+
+    /* Dessine le segment courant ET enregistre le point */
+    function stroke(p) {
+      ctx.beginPath();
+      ctx.moveTo(lastX, lastY);
+      ctx.lineTo(p.x, p.y);
+      ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
+      ctx.strokeStyle = isErasing ? 'rgba(0,0,0,1)' : drawColor;
+      ctx.lineWidth   = currentSize();
+      ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.stroke();
+      lastX = p.x; lastY = p.y;
+      if (currentStroke) currentStroke.points.push(norm(p));
+    }
+
+    function startStroke(p) {
+      isDrawing = true;
+      lastX = p.x; lastY = p.y;
+      /* Taille normalisée par la largeur du canvas pour rescaler proprement */
+      currentStroke = {
+        erasing: isErasing,
+        color:   drawColor,
+        size:    currentSize() / canvas.width,
+        points:  [norm(p)]
+      };
+      strokes.push(currentStroke);
+    }
+
+    function endStroke() { isDrawing = false; currentStroke = null; }
+
+    canvas.addEventListener('mousedown',  e => startStroke(getPos(e)));
+    canvas.addEventListener('mousemove',  e => { if (isDrawing) stroke(getPos(e)); });
+    canvas.addEventListener('mouseup',    endStroke);
+    canvas.addEventListener('mouseleave', endStroke);
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); startStroke(getPos(e)); }, { passive: false });
+    canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (isDrawing) stroke(getPos(e)); }, { passive: false });
+    canvas.addEventListener('touchend',   endStroke);
+
+    function enterDraw() {
+      if (infosMode) exitInfos();
+      drawMode = true;
+      document.body.classList.add('drawing-active');
+      scrollCol.classList.add('drawing');
+      layout.classList.add('grayscale');
+      btnDraw.classList.add('active');
+      descs.forEach(d => d.classList.add('draw-hidden'));
+      drawPanel.classList.add('visible');
+      resizeCanvas();
+      syncSlider();
+      updateCursor();
+    }
+
+    function exitDraw() {
+      drawMode = false;
+      document.body.classList.remove('drawing-active');
+      scrollCol.classList.remove('drawing');
+      layout.classList.remove('grayscale');
+      btnDraw.classList.remove('active');
+      descs.forEach(d => d.classList.remove('draw-hidden'));
+      drawPanel.classList.remove('visible');
+      ctx.globalCompositeOperation = 'source-over';
+    }
+
+    btnDraw.addEventListener('click', () => {
+      if (drawMode) exitDraw(); else enterDraw();
+    });
+    btnClose.addEventListener('click', () => {
+      if (infosMode) exitInfos();
+      else exitDraw();
+    });
+
+    /* Pinceau */
+    toolPen.addEventListener('click', () => {
+      isErasing = false;
+      toolPen.classList.add('active');
+      toolEraser.classList.remove('active');
+      syncSlider();
+      updateCursor();
+    });
+
+    /* Gomme */
+    toolEraser.addEventListener('click', () => {
+      isErasing = true;
+      toolEraser.classList.add('active');
+      toolPen.classList.remove('active');
+      syncSlider();
+      updateCursor();
+    });
+
+    /* Slider partagé — taille unique */
+    sizeSlider.addEventListener('input', () => {
+      brushSize = parseInt(sizeSlider.value);
+      updateCursor();
+    });
+
+    btnClear.addEventListener('click', () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      strokes.length = 0;
+    });
+
+    /* Curseur couleur */
+    const colorSlider = document.getElementById('color-slider');
+    colorSlider.addEventListener('input', () => {
+      drawColor = `hsl(${colorSlider.value}, 100%, 45%)`;
+      /* Met à jour la couleur du thumb via CSS variable */
+      colorSlider.style.setProperty('--thumb-color', drawColor);
+      if (!isErasing) updateCursor();
+    });
+
+    new ResizeObserver(resizeCanvas).observe(scrollCol);
+  </script>
+</body>
+</html>
