@@ -241,6 +241,7 @@
       color: #1f1f1f;
     }
     .project-desc u { text-decoration: underline; }
+    .project-desc u { text-decoration: underline; text-decoration-color: #888; }
     .project-desc .meta {
       font-family: 'Source Sans 3', sans-serif;
       font-size: 15px;
@@ -281,6 +282,7 @@
       color: #1f1f1f;
     }
     #infos-panel p u { text-decoration: underline; }
+    #infos-panel p u { text-decoration: underline; text-decoration-color: #888; }
     #infos-panel .infos-contact {
       margin-top: 22px;
     }
@@ -398,15 +400,15 @@
 
       /* ── Header ── */
       header {
-        align-items: flex-start;
-        padding: 16px 20px 16px 20px;  /* padding bas pour respirer sous le nom */
-        background: #fff;              /* fond blanc pour couvrir le scroll */
+        align-items: flex-start;   /* aligne en haut car le nom est sur 2 lignes */
+        padding: 16px 20px 0 20px;
+        background: transparent;
       }
 
       /* "Emilio Avignon" sur deux lignes */
       .site-name {
-        font-size: 28px;
-        width: min-content;
+        font-size: 35px;
+        width: min-content;        /* chaque mot prend une ligne */
         line-height: 1.15;
         white-space: normal;
       }
@@ -423,23 +425,15 @@
         font-size: 16px;
       }
 
-      /* Bouton "en" masqué sur mobile — langue détectée automatiquement */
-      #lang-btn { display: none !important; }
-
-      /* Boutons infos, dessiner et flèche en noir sur mobile */
-      #btn-infos, #btn-draw { color: #111; }
-      #btn-infos:hover, #btn-draw:hover { color: #111; }
-      .arrow.down { color: #111; }
-
       /* ── Layout : colonne unique ── */
       .layout {
         grid-template-columns: 1fr;
         height: 100dvh;
       }
 
-      /* ── Colonne centre : padding top adapté à la hauteur du header ── */
+      /* ── Colonne centre : marges latérales ── */
       .col-center {
-        padding: 110px 16px 80px 16px;  /* 110px pour passer sous le header à 2 lignes */
+        padding: 80px 16px 80px 16px;  /* 16px de marge de chaque côté */
         height: 100dvh;
       }
 
@@ -526,16 +520,140 @@
       .col-center.drawing { cursor: default; }
       }
 
-      /* ── Bloc blanc sous le titre et la flèche ── */
-      #mobile-overlay {
+    /* ══════════════════════════════════════════
+       MOBILE (≤ 768px)
+       Le panneau #m-panel est un élément dédié,
+       indépendant de la colonne droite desktop.
+    ══════════════════════════════════════════ */
+
+    /* Panneau mobile caché sur desktop */
+    #m-panel { display: none; }
+
+    @media (max-width: 768px) {
+
+      body { height: 100dvh; }
+
+      /* ── Header ── */
+      header {
+        align-items: flex-start;
+        padding: 16px 20px 16px 20px;
+        background: transparent;
+        
+      }
+      .site-name {
+        font-size: 28px;
+        width: min-content;
+        line-height: 1.15;
+        white-space: normal;
+      }
+      .header-right { gap: 16px; align-items: flex-start; padding-top: 2px; }
+      .header-right .header-btns { margin-left: 12px; gap: 16px; }
+      #btn-draw, #btn-infos, .hbtn, #btn-close { font-size: 16px; color: #111; }
+      #lang-btn { display: none !important; }
+
+      /* ── Layout : une seule colonne ── */
+      .layout { grid-template-columns: 1fr; height: 100dvh; }
+
+      /* ── Colonne centre ── */
+      .col-center { padding: 110px 16px 80px 16px; height: 100dvh; }
+      .project-block { margin-bottom: 120px; }
+
+      /* Images 100% largeur, espacement homogène */
+      .img.w25,.img.w30,.img.w35,.img.w40,.img.w45,
+      .img.w50,.img.w55,.img.w60,.img.w65,.img.w70,
+      .img.w80,.img.w100 { width: 100%; }
+      .img.left,.img.center,.img.right { margin-left:0; margin-right:0; }
+      .img,.img.gap-sm,.img.gap-lg,.img.gap-xl { margin-bottom: 16px; }
+
+      /* ── Colonne droite desktop : masquée ── */
+      .col-right { display: none !important; }
+
+      /* ── Panneau mobile dédié ── */
+      #m-panel {
         display: block;
         position: fixed;
         bottom: 0; left: 0; right: 0;
-        height: 64px;
-        z-index: 39;
-        pointer-events: none;
         background: #fff;
+        z-index: 50;
+        padding: 0 16px 24px 16px;
       }
+
+      /* Barre titre + bouton */
+      #m-titlebar {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding-top: 16px;
+        cursor: pointer;
+      }
+
+      #m-title {
+        font-family: 'Source Serif 4', serif;
+        font-size: 22px;
+        font-weight: 400;
+        font-style: italic;
+        color: #111;
+        flex: 1;
+        /* Transition blur comme le reste du site */
+        opacity: 0;
+        filter: blur(4px);
+        transform: translateY(4px);
+        transition: opacity 0.4s ease, filter 0.4s ease, transform 0.4s ease;
+      }
+      #m-title.visible {
+        opacity: 1;
+        filter: blur(0);
+        transform: translateY(0);
+      }
+
+      #m-btn {
+        font-family: 'Source Serif 4', serif;
+        font-size: 26px;
+        color: #111;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        margin-left: 12px;
+        flex-shrink: 0;
+        line-height: 1;
+      }
+
+      /* Zone description — se déploie vers le haut */
+      #m-desc {
+        overflow: hidden;
+        max-height: 0;
+        opacity: 0;
+        transition: max-height 0.45s ease, opacity 0.35s ease, padding-top 0.4s ease;
+        padding-top: 0;
+      }
+      #m-panel.open #m-desc {
+        max-height: 55vh;
+        opacity: 1;
+        padding-top: 14px;
+        overflow-y: auto;
+      }
+
+      #m-desc .m-meta {
+        font-family: 'Source Sans 3', sans-serif;
+        font-size: 14px;
+        color: #888;
+        line-height: 1.35;
+        margin-bottom: 10px;
+      }
+      #m-desc p {
+        font-family: 'Source Sans 3', sans-serif;
+        font-size: 14px;
+        line-height: 1.35;
+        color: #1f1f1f;
+      }
+      #m-desc p u { text-decoration: underline; }
+      #m-desc p u { text-decoration: underline; text-decoration-color: #888; }
+
+      /* Scroll blocker et curseur désactivés */
+      #draw-cursor { display: none !important; }
+      .col-center.drawing { cursor: default; }
+    }
   </style>
 </head>
 <body>
@@ -744,6 +862,8 @@
     };
 
     let lang = 'fr';
+    window.lang = lang;
+    window.translations = translations; /* exposé pour le panneau mobile */
     function renderDesc(key) {
       const t = translations[key];
       const desc = document.querySelector(key === 'intro' ? '#desc-intro' : `.project-desc[data-for="${key}"]`);
@@ -762,13 +882,10 @@
       const bioEl = document.getElementById('infos-bio');
       if (bioEl) bioEl.innerHTML = translations.intro[lang];
     }
-    /* Sur mobile : langue détectée depuis le navigateur */
-    if (window.innerWidth <= 768) {
-      lang = navigator.language.startsWith('fr') ? 'fr' : 'en';
-    }
     applyLang();
     document.getElementById('lang-btn').addEventListener('click', () => {
       lang = lang === 'fr' ? 'en' : 'fr';
+      window.lang = lang;
       applyLang();
     });
 
@@ -1093,6 +1210,105 @@
 
   <!-- Overlay mobile : blur + dégradé blanc en bas -->
   <div id="mobile-overlay"></div>
+
+  <!-- Panneau mobile dédié (masqué sur desktop) -->
+  <div id="m-panel">
+    <div id="m-titlebar">
+      <span id="m-title"></span>
+      <button id="m-btn">↓</button>
+    </div>
+    <div id="m-desc"></div>
+  </div>
+
+  <script>
+  /* ══ MOBILE PANEL ══
+     Fonctionne uniquement sur mobile (≤ 768px).
+     Met à jour le titre et la description en fonction
+     du projet visible dans le scroll.
+  ══════════════════════════════════════════════════ */
+  if (window.innerWidth <= 768) {
+
+    /* ── Langue automatique ── */
+    const _blocks = Array.from(document.querySelectorAll('.project-block'));
+    const _scroll = document.getElementById('scroll-col');
+
+    /* Détecte le projet actif (même logique que le desktop) */
+    function getMobileActiveId() {
+      const triggerY = _scroll.getBoundingClientRect().top + _scroll.clientHeight * 0.35;
+      let best = null;
+      for (const b of _blocks) {
+        if (b.getBoundingClientRect().top <= triggerY) best = b.id;
+      }
+      return best;
+    }
+
+    const mPanel  = document.getElementById('m-panel');
+    const mTitle  = document.getElementById('m-title');
+    const mBtn    = document.getElementById('m-btn');
+    const mDesc   = document.getElementById('m-desc');
+
+    let mCurrentId = null;
+
+    /* Remplit le panneau avec les données du projet */
+    function mSetProject(id) {
+      if (id === mCurrentId) return;
+      mCurrentId = id;
+      mClose();
+
+      if (!id || !window.translations) {
+        mTitle.textContent = '';
+        mTitle.classList.remove('visible');
+        mDesc.innerHTML = '';
+        return;
+      }
+
+      const t = window.translations[id];
+      if (!t) return;
+
+      mTitle.textContent = t.title || '';
+      mTitle.classList.add('visible');
+
+      /* Construit le HTML de la description */
+      const curLang = window.lang || 'fr';
+      let html = '';
+      if (t.meta && t.meta[curLang]) html += `<div class="m-meta">${t.meta[curLang]}</div>`;
+      if (t[curLang])                html += `<p>${t[curLang]}</p>`;
+      mDesc.innerHTML = html;
+    }
+
+    function mOpen()  { mPanel.classList.add('open');    mBtn.textContent = '✕'; }
+    function mClose() { mPanel.classList.remove('open'); mBtn.textContent = '↓'; }
+
+    /* Ouvre/ferme au clic sur la barre titre */
+    document.getElementById('m-titlebar').addEventListener('click', () => {
+      mPanel.classList.contains('open') ? mClose() : mOpen();
+    });
+
+    /* Clic en dehors : ferme */
+    document.addEventListener('click', e => {
+      if (mPanel.classList.contains('open') && !mPanel.contains(e.target)) mClose();
+    });
+
+    /* Suit le scroll */
+    let mLastId = null;
+    _scroll.addEventListener('scroll', () => {
+      const id = getMobileActiveId();
+      if (id !== mLastId) { mLastId = id; mSetProject(id); }
+    }, { passive: true });
+
+    /* Clic flèche ↓ : projet suivant */
+    document.getElementById('m-btn').addEventListener('click', e => {
+      e.stopPropagation(); /* ne pas déclencher l'ouverture du panneau */
+      if (mPanel.classList.contains('open')) { mClose(); return; }
+      const idx = _blocks.findIndex(b => b.id === mCurrentId);
+      const next = idx < _blocks.length - 1 ? idx + 1 : 0;
+      _scroll.scrollTo({ top: _blocks[next].offsetTop - 80, behavior: 'smooth' });
+    });
+
+    /* Désactive le scroll blocker desktop sur mobile */
+    /* (géré ici plutôt que dans le script principal) */
+  }
+  </script>
 
 </body>
 </html>
