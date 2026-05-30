@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Emilio Avignon</title>
+  <link rel="icon" type="image/png" href="images/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,wght@0,300;0,400;1,300;1,400&family=Source+Sans+3:wght@300;400&display=swap" rel="stylesheet">
 
@@ -831,7 +832,6 @@
 
     function buildInfosContent(container) {
       const p = document.createElement('p');
-      p.className = 'infos-text';
       p.innerHTML = translations.intro[lang];
       container.appendChild(p);
       const c = document.createElement('div');
